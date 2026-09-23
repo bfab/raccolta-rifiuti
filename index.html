@@ -134,6 +134,52 @@
                 z-index: 4;
                 background: #eef2f5;
             }
+            .type-cell {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+            }
+            .type-icon {
+                flex: none;
+                font-size: 1.2rem;
+                line-height: 1;
+            }
+            .type-label {
+                line-height: 1.15;
+            }
+            @media (max-width: 640px) {
+                table {
+                    min-width: 560px;
+                }
+                th:first-child,
+                td:first-child {
+                    min-width: 78px;
+                    width: 78px;
+                    padding: 8px 6px;
+                }
+                .type-cell {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 2px;
+                }
+                .type-icon {
+                    font-size: 1.15rem;
+                }
+                .type-label {
+                    font-size: 0.66rem;
+                    white-space: normal;
+                    word-break: break-word;
+                }
+                th,
+                td {
+                    padding: 8px 5px;
+                }
+                .mark {
+                    width: 26px;
+                    height: 26px;
+                    font-size: 0.9rem;
+                }
+            }
             .weekend {
                 background: var(--weekend) !important;
             }
@@ -308,6 +354,17 @@
                 "Olio esausto",
             ];
 
+            const icons = {
+                "RUR / Rifiuto urbano residuo": "🗑️",
+                "Servizio pannoloni": "🚼",
+                "Umido organico": "🍎",
+                Carta: "📄",
+                "MML / Multimateriale leggero": "♻️",
+                Vetro: "🍾",
+                Verde: "🌿",
+                "Olio esausto": "🛢️",
+            };
+
             const names = {
                 en: {
                     title: "Collection calendar",
@@ -414,7 +471,14 @@
                 types.forEach((type) => {
                     const tr = document.createElement("tr");
                     const label = document.createElement("th");
-                    label.textContent = t.types[type] || type;
+                    const typeName = t.types[type] || type;
+                    label.title = typeName;
+                    label.innerHTML =
+                        '<span class="type-cell"><span class="type-icon" aria-hidden="true">' +
+                        (icons[type] || "•") +
+                        '</span><span class="type-label">' +
+                        typeName +
+                        "</span></span>";
                     tr.appendChild(label);
 
                     order.forEach((w) => {
