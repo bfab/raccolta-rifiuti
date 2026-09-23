@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Centro Mare — Collection Calendar</title>
+        <style>
+            :root {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    sans-serif;
+                color: #18222b;
+                background: #f3f5f7;
+                --weekend: #fff0f0;
+                --weekend-head: #f7dede;
+                --yes: #e8f5eb;
+                --yes-text: #18743a;
+                --border: #d8dee4;
+                --panel: #fff;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+            }
+            main {
+                max-width: 1100px;
+                margin: auto;
+                padding: 24px 14px 45px;
+            }
+            header,
+            .calendar-wrap {
+                background: var(--panel);
+                border-radius: 18px;
+                box-shadow: 0 4px 20px #00000010;
+            }
+            header {
+                padding: 20px;
+                margin-bottom: 16px;
+            }
+            h1 {
+                margin: 0 0 5px;
+                font-size: clamp(1.6rem, 4vw, 2.25rem);
+            }
+            .meta,
+            .season {
+                color: #687580;
+            }
+            .toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-top: 16px;
+            }
+            input[type="date"] {
+                font: inherit;
+                padding: 9px 11px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+            }
+            .switch {
+                display: inline-flex;
+                align-items: center;
+                gap: 9px;
+                cursor: pointer;
+                font-weight: 650;
+            }
+            .switch input {
+                position: absolute;
+                opacity: 0;
+            }
+            .track {
+                width: 46px;
+                height: 26px;
+                background: #aab4bd;
+                border-radius: 99px;
+                padding: 3px;
+                transition: 0.2s;
+            }
+            .thumb {
+                display: block;
+                width: 20px;
+                height: 20px;
+                background: white;
+                border-radius: 50%;
+                transition: 0.2s;
+            }
+            .switch input:checked + .track {
+                background: #2f7d4a;
+            }
+            .switch input:checked + .track .thumb {
+                transform: translateX(20px);
+            }
+            .calendar-wrap {
+                overflow: auto;
+            }
+            table {
+                width: 100%;
+                min-width: 760px;
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+            th,
+            td {
+                border-right: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+                padding: 11px 8px;
+                text-align: center;
+            }
+            thead th {
+                position: sticky;
+                top: 0;
+                background: #eef2f5;
+                z-index: 2;
+                font-size: 0.85rem;
+            }
+            th:first-child,
+            td:first-child {
+                position: sticky;
+                left: 0;
+                z-index: 3;
+                text-align: left;
+                background: var(--panel);
+                min-width: 210px;
+                font-weight: 650;
+            }
+            thead th:first-child {
+                z-index: 4;
+                background: #eef2f5;
+            }
+            .weekend {
+                background: var(--weekend) !important;
+            }
+            thead .weekend {
+                background: var(--weekend-head) !important;
+            }
+            .mark {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                font-weight: 800;
+                font-size: 1rem;
+            }
+            .yes {
+                background: var(--yes);
+                color: var(--yes-text);
+            }
+            .no {
+                color: #9ba5ad;
+            }
+            .monthly {
+                font-size: 0.7rem;
+                line-height: 1.1;
+            }
+            .legend {
+                padding: 14px 18px;
+                color: #65727d;
+                font-size: 0.9rem;
+                line-height: 1.45;
+            }
+            .today {
+                outline: 2px solid #557a9a;
+                outline-offset: -2px;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <header>
+                <h1 id="title">Collection calendar</h1>
+                <div id="subtitle" class="meta">
+                    Centro Mare · domestic users · Viareggio
+                </div>
+                <div class="toolbar">
+                    <div>
+                        <input id="date" type="date" aria-label="Date" />
+                        <div
+                            id="season"
+                            class="season"
+                            style="margin-top: 7px"
+                        ></div>
+                    </div>
+                    <label class="switch">
+                        <span id="langLabel">Italiano</span>
+                        <input
+                            id="language"
+                            type="checkbox"
+                            aria-label="Switch language"
+                        />
+                        <span class="track"><span class="thumb"></span></span>
+                        <span>English</span>
+                    </label>
+                </div>
+            </header>
+
+            <section class="calendar-wrap">
+                <table id="calendar">
+                    <thead>
+                        <tr id="head"></tr>
+                    </thead>
+                    <tbody id="body"></tbody>
+                </table>
+                <div class="legend" id="legend"></div>
+            </section>
+        </main>
+
+        <script>
+          // Sun = 0
+            const seasons = [
+                {
+                    name: "1 gennaio – 31 marzo",
+                    start: [1, 1],
+                    end: [3, 31],
+                    collections: {
+                        "RUR / Rifiuto urbano residuo": [0, 3],
+                        "Servizio pannoloni": [0, 3],
+                        "Umido organico": [1, 4],
+                        Carta: [0],
+                        "MML / Multimateriale leggero": [5],
+                        Vetro: [1],
+                        Verde: [2],
+                        "Olio esausto": [2],
+                    },
+                    special_monthly: { Verde: [1, 3], "Olio esausto": [1, 3] },
+                },
+                {
+                    name: "1 aprile – 14 giugno",
+                    start: [4, 1],
+                    end: [6, 14],
+                    collections: {
+                        "RUR / Rifiuto urbano residuo": [0, 3],
+                        "Servizio pannoloni": [0, 3],
+                        "Umido organico": [1, 4],
+                        Carta: [0],
+                        "MML / Multimateriale leggero": [5],
+                        Vetro: [1],
+                        Verde: [2],
+                        "Olio esausto": [2],
+                    },
+                    special_monthly: { "Olio esausto": [1, 3] },
+                },
+                {
+                    name: "15 giugno – 30 giugno",
+                    start: [6, 15],
+                    end: [6, 30],
+                    collections: {
+                        "RUR / Rifiuto urbano residuo": [0, 3],
+                        "Servizio pannoloni": [0, 3],
+                        "Umido organico": [1, 4],
+                        Carta: [0],
+                        "MML / Multimateriale leggero": [5],
+                        Vetro: [1],
+                        Verde: [2],
+                        "Olio esausto": [2],
+                    },
+                    special_monthly: { "Olio esausto": [1, 3] },
+                },
+                {
+                    name: "1 luglio – 15 settembre",
+                    start: [7, 1],
+                    end: [9, 15],
+                    collections: {
+                        "RUR / Rifiuto urbano residuo": [0, 3],
+                        "Servizio pannoloni": [0, 3],
+                        "Umido organico": [1, 4],
+                        Carta: [0],
+                        "MML / Multimateriale leggero": [5],
+                        Vetro: [1],
+                        Verde: [2],
+                        "Olio esausto": [2],
+                    },
+                    special_monthly: { Verde: [1, 3], "Olio esausto": [1, 3] },
+                },
+                {
+                    name: "16 settembre – 31 dicembre",
+                    start: [9, 16],
+                    end: [12, 31],
+                    collections: {
+                        "RUR / Rifiuto urbano residuo": [0, 5],
+                        "Servizio pannoloni": [0, 5],
+                        "Umido organico": [1, 2],
+                        Carta: [2],
+                        "MML / Multimateriale leggero": [3],
+                        Vetro: [4],
+                        Verde: [4],
+                        "Olio esausto": [4],
+                    },
+                    special_monthly: { Verde: [1, 3], "Olio esausto": [1, 3] },
+                },
+            ];
+            const types = [
+                "RUR / Rifiuto urbano residuo",
+                "Servizio pannoloni",
+                "Umido organico",
+                "Carta",
+                "MML / Multimateriale leggero",
+                "Vetro",
+                "Verde",
+                "Olio esausto",
+            ];
+
+            const names = {
+                en: {
+                    title: "Collection calendar",
+                    subtitle: "Centro Mare · domestic users · Viareggio",
+                    season: "Table in force",
+                    yes: "Collection",
+                    no: "No collection",
+                    monthly: "1st / 3rd",
+                    legend: "✓ = collection · — = no collection · 1st / 3rd = first or third day of the month, as indicated by the source table.",
+                    types: {
+                        "RUR / Rifiuto urbano residuo": "Residual waste",
+                        "Servizio pannoloni": "Nappies / incontinence pads",
+                        "Umido organico": "Organic waste",
+                        Carta: "Paper",
+                        "MML / Multimateriale leggero": "Light multi-material",
+                        Vetro: "Glass",
+                        Verde: "Garden waste",
+                        "Olio esausto": "Used cooking oil",
+                    },
+                    days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+                },
+                it: {
+                    title: "Calendario raccolta",
+                    subtitle: "Centro Mare · utenze domestiche · Viareggio",
+                    season: "Tabella in vigore",
+                    yes: "Raccolta",
+                    no: "Nessuna raccolta",
+                    monthly: "1° / 3°",
+                    legend: "✓ = raccolta · — = nessuna raccolta · 1° / 3° = primo o terzo giorno del mese, come indicato nella tabella originale.",
+                    types: {
+                        "RUR / Rifiuto urbano residuo":
+                            "Rifiuto urbano residuo",
+                        "Servizio pannoloni": "Servizio pannoloni",
+                        "Umido organico": "Umido organico",
+                        Carta: "Carta",
+                        "MML / Multimateriale leggero":
+                            "Multimateriale leggero",
+                        Vetro: "Vetro",
+                        Verde: "Verde",
+                        "Olio esausto": "Olio esausto",
+                    },
+                    days: ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"],
+                },
+            };
+
+            function localDate(s) {
+                const [y, m, d] = s.split("-").map(Number);
+                return new Date(y, m - 1, d);
+            }
+            function seasonFor(d) {
+                return (
+                    seasons.find((s) => {
+                        const a = new Date(
+                            d.getFullYear(),
+                            s.start[0] - 1,
+                            s.start[1],
+                        );
+                        const b = new Date(
+                            d.getFullYear(),
+                            s.end[0] - 1,
+                            s.end[1],
+                        );
+                        return d >= a && d <= b;
+                    }) || seasons[seasons.length - 1]
+                );
+            }
+            function render() {
+                const lang = document.getElementById("language").checked
+                    ? "en"
+                    : "it";
+                const t = names[lang];
+                const selected = localDate(
+                    document.getElementById("date").value,
+                );
+                const season = seasonFor(selected);
+
+                document.documentElement.lang = lang;
+                document.getElementById("title").textContent = t.title;
+                document.getElementById("subtitle").textContent = t.subtitle;
+                document.getElementById("season").textContent =
+                    t.season + ": " + season.name;
+                document.getElementById("langLabel").textContent =
+                    lang === "it" ? "Italiano" : "Italiano";
+
+                // Italian starts Monday; English starts Sunday.
+                const order =
+                    lang === "it"
+                        ? [1, 2, 3, 4, 5, 6, 0]
+                        : [0, 1, 2, 3, 4, 5, 6];
+                const head = document.getElementById("head");
+                head.innerHTML =
+                    "<th>" +
+                    (lang === "it" ? "Tipo di rifiuto" : "Refuse type") +
+                    "</th>";
+                order.forEach((w) => {
+                    const th = document.createElement("th");
+                    th.textContent = t.days[lang === "it" ? w - 1 : w];
+                    if (w === 0 || w === 6) th.className = "weekend";
+                    head.appendChild(th);
+                });
+
+                const body = document.getElementById("body");
+                body.innerHTML = "";
+                types.forEach((type) => {
+                    const tr = document.createElement("tr");
+                    const label = document.createElement("th");
+                    label.textContent = t.types[type] || type;
+                    tr.appendChild(label);
+
+                    order.forEach((w) => {
+                        const td = document.createElement("td");
+                        if (w === 0 || w === 6) td.className = "weekend";
+                        if (selected.getDay() === w) td.classList.add("today");
+
+                        const active = (
+                            season.collections[type] || []
+                        ).includes(w);
+                        const monthly =
+                            (season.special_monthly[type] || []).length > 0;
+                        const mark = document.createElement("span");
+                        mark.className = "mark " + (active ? "yes" : "no");
+                        mark.textContent = active ? "✓" : "—";
+                        mark.title = active ? t.yes : t.no;
+                        td.appendChild(mark);
+
+                        if (monthly && active) {
+                            const small = document.createElement("div");
+                            small.className = "monthly";
+                            small.textContent = t.monthly;
+                            td.appendChild(small);
+                        }
+                        tr.appendChild(td);
+                    });
+                    body.appendChild(tr);
+                });
+                document.getElementById("legend").textContent = t.legend;
+            }
+
+            const now = new Date();
+            document.getElementById("date").value =
+                `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+            document.getElementById("language").checked = false;
+            document.getElementById("date").addEventListener("change", render);
+            document
+                .getElementById("language")
+                .addEventListener("change", render);
+            render();
+        </script>
+    </body>
+</html>
