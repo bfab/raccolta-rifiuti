@@ -213,6 +213,34 @@
                 font-size: 0.9rem;
                 line-height: 1.45;
             }
+            .legend-key {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                margin-bottom: 8px;
+            }
+            .legend-key-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+            }
+            .legend-badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background: var(--yes);
+                color: var(--yes-text);
+                font-weight: 800;
+                font-size: 0.85rem;
+                flex: none;
+            }
+            .legend-badge.no {
+                background: #eceff1;
+                color: #9ba5ad;
+            }
             .today {
                 outline: 2px solid #557a9a;
                 outline-offset: -2px;
@@ -277,6 +305,16 @@
                         "Olio esausto": [2],
                     },
                     special_monthly: { Verde: [1, 3], "Olio esausto": [1, 3] },
+                    exposure: {
+                        "RUR / Rifiuto urbano residuo": "S",
+                        "Servizio pannoloni": "S",
+                        "Umido organico": "N",
+                        Carta: "N",
+                        "MML / Multimateriale leggero": "N",
+                        Vetro: "N",
+                        Verde: "N",
+                        "Olio esausto": "N",
+                    },
                 },
                 {
                     name: "1 aprile – 14 giugno",
@@ -293,6 +331,16 @@
                         "Olio esausto": [2],
                     },
                     special_monthly: { "Olio esausto": [1, 3] },
+                    exposure: {
+                        "RUR / Rifiuto urbano residuo": "S",
+                        "Servizio pannoloni": "S",
+                        "Umido organico": "N",
+                        Carta: "N",
+                        "MML / Multimateriale leggero": "N",
+                        Vetro: "N",
+                        Verde: "N",
+                        "Olio esausto": "N",
+                    },
                 },
                 {
                     name: "15 giugno – 30 giugno",
@@ -309,6 +357,16 @@
                         "Olio esausto": [2],
                     },
                     special_monthly: { "Olio esausto": [1, 3] },
+                    exposure: {
+                        "RUR / Rifiuto urbano residuo": "S",
+                        "Servizio pannoloni": "S",
+                        "Umido organico": "S",
+                        Carta: "S",
+                        "MML / Multimateriale leggero": "S",
+                        Vetro: "N",
+                        Verde: "N",
+                        "Olio esausto": "N",
+                    },
                 },
                 {
                     name: "1 luglio – 15 settembre",
@@ -325,6 +383,16 @@
                         "Olio esausto": [2],
                     },
                     special_monthly: { Verde: [1, 3], "Olio esausto": [1, 3] },
+                    exposure: {
+                        "RUR / Rifiuto urbano residuo": "S",
+                        "Servizio pannoloni": "S",
+                        "Umido organico": "S",
+                        Carta: "S",
+                        "MML / Multimateriale leggero": "S",
+                        Vetro: "N",
+                        Verde: "N",
+                        "Olio esausto": "N",
+                    },
                 },
                 {
                     name: "16 settembre – 31 dicembre",
@@ -341,6 +409,16 @@
                         "Olio esausto": [2],
                     },
                     special_monthly: { Verde: [1, 3], "Olio esausto": [1, 3] },
+                    exposure: {
+                        "RUR / Rifiuto urbano residuo": "S",
+                        "Servizio pannoloni": "S",
+                        "Umido organico": "N",
+                        Carta: "N",
+                        "MML / Multimateriale leggero": "N",
+                        Vetro: "N",
+                        Verde: "N",
+                        "Olio esausto": "N",
+                    },
                 },
             ];
             const types = [
@@ -373,7 +451,13 @@
                     yes: "Collection",
                     no: "No collection",
                     monthly: "1st / 3rd",
-                    legend: "✓ = collection · — = no collection · 1st / 3rd = first or third day of the month, as indicated by the source table.",
+                    hours: {
+                        M: "Put out in the morning, by 1pm",
+                        S: "Put out between 9pm and midnight on the indicated day",
+                        N: "Put out from 9pm on the indicated day until 6am the next morning",
+                    },
+                    monthlyDesc: "First or third day of the month",
+                    legend: "Exposure times above apply on any day marked with a code. — = no collection.",
                     types: {
                         "RUR / Rifiuto urbano residuo": "Residual waste",
                         "Servizio pannoloni": "Nappies / incontinence pads",
@@ -393,7 +477,13 @@
                     yes: "Raccolta",
                     no: "Nessuna raccolta",
                     monthly: "1° / 3°",
-                    legend: "✓ = raccolta · — = nessuna raccolta · 1° / 3° = primo o terzo giorno del mese, come indicato nella tabella originale.",
+                    hours: {
+                        M: "Al mattino entro le ore 13",
+                        S: "Dalle 21 alle 24 del giorno indicato",
+                        N: "Dalle 21 del giorno indicato alle 6 del mattino successivo",
+                    },
+                    monthlyDesc: "Il primo ed il terzo giorno del mese",
+                    legend: "Gli orari sopra si applicano a qualsiasi giorno con un codice. — = nessuna raccolta.",
                     types: {
                         "RUR / Rifiuto urbano residuo":
                             "Rifiuto urbano residuo",
@@ -491,10 +581,14 @@
                         ).includes(w);
                         const monthly =
                             (season.special_monthly[type] || []).length > 0;
+                        const code = (season.exposure || {})[type];
                         const mark = document.createElement("span");
                         mark.className = "mark " + (active ? "yes" : "no");
-                        mark.textContent = active ? "✓" : "—";
-                        mark.title = active ? t.yes : t.no;
+                        mark.textContent = active ? code || "✓" : "—";
+                        mark.title = active
+                            ? t.yes +
+                              (code ? " — " + (t.hours[code] || "") : "")
+                            : t.no;
                         td.appendChild(mark);
 
                         if (monthly && active) {
@@ -507,7 +601,27 @@
                     });
                     body.appendChild(tr);
                 });
-                document.getElementById("legend").textContent = t.legend;
+                const keyCodes = ["M", "S", "N"];
+                const keyHtml =
+                    '<div class="legend-key">' +
+                    keyCodes
+                        .map(
+                            (code) =>
+                                '<span class="legend-key-item"><span class="legend-badge">' +
+                                code +
+                                "</span><span>" +
+                                t.hours[code] +
+                                "</span></span>",
+                        )
+                        .join("") +
+                    '<span class="legend-key-item"><span class="legend-badge">1/3</span><span>' +
+                    t.monthlyDesc +
+                    "</span></span>" +
+                    '<span class="legend-key-item"><span class="legend-badge no">—</span><span>' +
+                    t.no +
+                    "</span></span></div>";
+                document.getElementById("legend").innerHTML =
+                    keyHtml + "<div>" + t.legend + "</div>";
             }
 
             const now = new Date();
